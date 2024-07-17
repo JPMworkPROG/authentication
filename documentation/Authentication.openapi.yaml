@@ -1,0 +1,246 @@
+openapi: 3.1.0
+x-stoplight:
+  id: cexcptn0t0ka1
+info:
+  title: Authentication
+  version: '1.0'
+  description: |-
+    Este é um microserviço de autenticação construído com Node.js, Express, Passport e JWT.
+    Ele permite que os usuários se registrem, façam login e acessem endpoints protegidos usando tokens JWT.
+  contact:
+    name: Jean Pinto Malavasi
+    email: jpm.work.prog@gmail.com
+    url: 'https://www.linkedin.com/in/jeanpintomalavasi/'
+  summary: Sistema de autenticação.
+servers:
+  - url: 'http://localhost:3000'
+    description: Local
+paths:
+  /auth/register:
+    post:
+      summary: Cria usuario
+      operationId: post-auth-register
+      responses:
+        '201':
+          $ref: '#/components/responses/created_user'
+        '400':
+          $ref: '#/components/responses/email_in_use'
+      description: Cria um novo usuario.
+      requestBody:
+        $ref: '#/components/requestBodies/create_user'
+    parameters: []
+  /auth/login:
+    post:
+      summary: Autentica no sistema
+      operationId: post-auth-login
+      responses:
+        '201':
+          $ref: '#/components/responses/authenticated'
+        '401':
+          $ref: '#/components/responses/invalid_credentials'
+      requestBody:
+        $ref: '#/components/requestBodies/authenticate'
+      description: Se autentica no sistema.
+  /api/protected:
+    get:
+      summary: Endpoint protegido
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/protected_endpoint'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+      operationId: get-api-protected
+      security:
+        - JWT: []
+      description: Endpoint protegido pela autenticação.
+components:
+  schemas:
+    User:
+      type: object
+      x-examples:
+        Example 1:
+          username: ''
+          email: ''
+          password: password123
+      description: Modelo de um usuario.
+      properties:
+        username:
+          type: string
+          minLength: 3
+        email:
+          type: string
+          format: email
+          example: example@gmail.com
+        password:
+          type: string
+          minLength: 4
+      required:
+        - username
+        - email
+        - password
+  securitySchemes:
+    JWT:
+      name: Authorization
+      type: apiKey
+      in: header
+  responses:
+    created_user:
+      description: Resposta da criação de um usuario com sucesso.
+      content:
+        application/json:
+          schema:
+            type: object
+            x-examples:
+              Example 1:
+                username: '11'
+                email: '111'
+                password: $2b$10$kRAEJJ0f/cIaYDoB8jLMUOgtlmVQIkf7RiqFDn8umLpKu8/8e0j.K
+                _id: 6696ff43a2aeb6490d1e214a
+                createdAt: '2024-07-16T23:16:19.677Z'
+                updatedAt: '2024-07-16T23:16:19.677Z'
+                __v: 0
+            properties:
+              username:
+                type: string
+              email:
+                type: string
+              password:
+                type: string
+              _id:
+                type: string
+              createdAt:
+                type: string
+              updatedAt:
+                type: string
+              __v:
+                type: integer
+            required:
+              - username
+              - email
+              - password
+              - _id
+              - createdAt
+              - updatedAt
+              - __v
+    email_in_use:
+      description: Resposta ao tentar criar um usuario já existente.
+      content:
+        application/json:
+          schema:
+            type: object
+            x-examples:
+              Example 1:
+                error: Email in use.
+            properties:
+              error:
+                type: string
+                default: Email in use.
+                example: Email in use.
+            required:
+              - error
+    authenticated:
+      description: Resposta da autenticação no sistema com sucesso.
+      content:
+        application/json:
+          schema:
+            type: object
+            x-examples:
+              Example 1:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2OTVjZWQ3ZjE4MzUxYTVhYjUzNzM2ZiIsImlhdCI6MTcyMTE3NTIwMCwiZXhwIjoxNzIxMTc4ODAwfQ.jO9nujz-BiZ1QKoImQCyzs8KfOeqy5exn2wrVFk8TME
+                expiresIn: 1h
+            properties:
+              token:
+                type: string
+              expiresIn:
+                type: string
+                example: 1h
+    invalid_credentials:
+      description: Resposta ao tentar falhar na autenticação no sistema.
+      content:
+        application/json:
+          schema:
+            type: object
+            x-examples:
+              Example 1:
+                message: Invalid credentials
+            properties:
+              message:
+                type: string
+                example: Invalid credentials
+                default: Invalid credentials
+    protected_endpoint:
+      description: Resposta ao consultar o endpoint protegido.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              user:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  username:
+                    type: string
+                  email:
+                    type: string
+                  password:
+                    type: string
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                  __v:
+                    type: integer
+            x-examples:
+              Example 1:
+                message: This is protected data.
+                user:
+                  _id: 6695ced7f18351a5ab53736f
+                  username: testuser2
+                  email: testuser@example2.com
+                  password: $2b$10$lfT0LeoYST3RndGOBU8RQOcARzKDpcb01t3HF72HsKGSA3gRFaeJG
+                  createdAt: '2024-07-16T01:37:27.097Z'
+                  updatedAt: '2024-07-16T01:37:27.097Z'
+                  __v: 0
+    unauthorized:
+      description: Resposta ao utilizar um endpoint protegido sem um token de autenticação valido.
+      content:
+        application/json:
+          schema:
+            type: object
+            x-examples:
+              Example 1:
+                message: Unauthorized
+            properties:
+              message:
+                type: string
+                example: Unauthorized
+                default: Unauthorized
+  requestBodies:
+    create_user:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+      description: Corpo para realizar a criação de um usuario.
+    authenticate:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+            x-examples:
+              Example 1:
+                username: testuser2
+                password: password123
+      description: Corpo para realizar autenticação no sistema.
+security:
+  - API Key - 1: []
