@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import { model, Schema } from "mongoose";
 import bcrypt from 'bcrypt';
 
 export interface IUser extends Document {
@@ -8,25 +8,43 @@ export interface IUser extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-const UserSchema = new Schema<IUser>({
-  username: { type: String, required: true, unique: true, trim: true },
-  email: { type: String, required: true, unique: true, trim: true },
-  password: { type: String, required: true }
-}, { timestamps: true });
+class UserSchema {
+  private schema = new Schema<IUser>({
+    username: { type: String, required: true, unique: true, trim: true },
+    email: { type: String, required: true, unique: true, trim: true },
+    password: { type: String, required: true }
+  }, { 
+    timestamps: true,
+    toJSON: {
+      transform: function(doc, ret) {
+        delete ret.password;
+        delete ret["__v"];
+        return ret;
+      }
+    }
+  });
 
-UserSchema.pre('save', async function (next) {
-  const user = this as IUser;
-  try {
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
-    next();
-  } catch (err) {
-    next(err);
+  constructor() {
+    this.schema.pre('save', async function (next) {
+      const user = this as IUser;
+      try {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+        next();
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    this.schema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+      return await bcrypt.compare(candidatePassword, this.password);
+    };
   }
-});
 
-UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
+  getModel() {
+    return model<IUser>('User', this.schema)
+  }
+}
 
-export default mongoose.model('User', UserSchema);
+
+export default new UserSchema().getModel()

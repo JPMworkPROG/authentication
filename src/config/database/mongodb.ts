@@ -1,6 +1,9 @@
-import { IDatabaseConfig } from "./databaseConfig.interface";
 import config from '../envVariablesLoad';
 import mongoose from "mongoose";
+
+export interface IDatabaseConfig {
+   connect(): Promise<void>
+}
 
 class MongodbConfig implements IDatabaseConfig {
    private url = config.DATABASE_URL

@@ -3,6 +3,8 @@ import passport from 'passport';
 
 const authenticateJwt = (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate('jwt', { session: false }, (err, user) => {
+    console.log(user);
+    
     if (err || !user) {
       return res.status(401).json({ message: 'Unauthorized' });
     }

@@ -1,13 +1,20 @@
-import { Request, Response } from 'express';
-import passport from 'passport';
-import jwt from 'jsonwebtoken';
-import UserService from '../services/userService';
 import config from '../config/envVariablesLoad';
+import { Request, Response } from 'express';
+import UserService from '../services/userService';
+import AuthService from '../services/authService';
 
-class AuthController {
+export default class AuthController {
+  private userService: UserService;
+  private authService: AuthService;
+
+  constructor(userService: UserService, authService: AuthService) {
+    this.userService = userService;
+    this.authService = authService;
+  }
+
   async register(req: Request, res: Response) {
     try {
-      const user = await UserService.create(req.body);
+      const user = await this.userService.create(req.body);
       return res.status(201).json(user);
     } catch (error) {
       return res.status(400).json({ error: error.message });
@@ -15,14 +22,14 @@ class AuthController {
   }
 
   async login(req: Request, res: Response) {
-    passport.authenticate('local', { session: false }, (err, user) => {
-      if (err || !user) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-      const token = jwt.sign({ id: user.id }, config.JWT_SECRET, { expiresIn: config.JWT_SECRET_EXPIRES_IN });
-      return res.json({ token, expiresIn: config.JWT_SECRET_EXPIRES_IN });
-    })(req, res);
+    const { username, password } = req.body;
+    const user = await this.authService.authenticate({ username, password });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = this.authService.generateToken(user.id);
+    return res.json({ token, expiresIn: config.JWT_SECRET_EXPIRES_IN });
   }
 }
-
-export default new AuthController();
